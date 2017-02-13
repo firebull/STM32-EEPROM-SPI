@@ -35,6 +35,7 @@ extern "C" {
 #define EEPROM_CS_LOW()     HAL_GPIO_WritePin(EEPROM_CS_GPIO_Port, EEPROM_CS_Pin, GPIO_PIN_RESET)
 
 typedef enum {
+    EEPROM_STATUS_PENDING,
     EEPROM_STATUS_COMPLETE,
     EEPROM_STATUS_ERROR
 } EepromOperations;
@@ -42,7 +43,7 @@ typedef enum {
 extern void Error_Handler(void);
 
 
-void     EEPROM_SPI_WriteBuffer(uint8_t* pBuffer, uint16_t WriteAddr, uint16_t NumByteToWrite);
+EepromOperations EEPROM_SPI_WriteBuffer(uint8_t* pBuffer, uint16_t WriteAddr, uint16_t NumByteToWrite);
 EepromOperations EEPROM_WritePage(uint8_t* pBuffer, uint16_t WriteAddr, uint16_t NumByteToWrite);
 EepromOperations EEPROM_SPI_ReadBuffer(uint8_t* pBuffer, uint16_t ReadAddr, uint16_t NumByteToRead);
 uint8_t EEPROM_SPI_WaitStandbyState(void);

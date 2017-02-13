@@ -22,7 +22,7 @@
 
 extern SPI_HandleTypeDef EEPROM_SPI;
 uint8_t EEPROM_StatusByte;
-uint8_t RxBuffer[32] = {0x00};
+uint8_t RxBuffer[8] = {0x00};
 
 /**
   * @brief  Writes more than one byte to the EEPROM with a single WRITE cycle
@@ -33,7 +33,7 @@ uint8_t RxBuffer[32] = {0x00};
   * @param  WriteAddr: EEPROM's internal address to write to.
   * @param  NumByteToWrite: number of bytes to write to the EEPROM, must be equal
   *         or less than "EEPROM_PAGESIZE" value.
-  * @retval None
+  * @retval EepromOperations value: EEPROM_STATUS_COMPLETE or EEPROM_STATUS_ERROR
   */
 EepromOperations EEPROM_SPI_WritePage(uint8_t* pBuffer, uint16_t WriteAddr, uint16_t NumByteToWrite) {
     while (EEPROM_SPI.State != HAL_SPI_STATE_READY) {
@@ -92,11 +92,13 @@ EepromOperations EEPROM_SPI_WritePage(uint8_t* pBuffer, uint16_t WriteAddr, uint
   *         to the EEPROM.
   * @param  WriteAddr: EEPROM's internal address to write to.
   * @param  NumByteToWrite: number of bytes to write to the EEPROM.
-  * @retval None
+  * @retval EepromOperations value: EEPROM_STATUS_COMPLETE or EEPROM_STATUS_ERROR
   */
-void EEPROM_SPI_WriteBuffer(uint8_t* pBuffer, uint16_t WriteAddr, uint16_t NumByteToWrite) {
+EepromOperations EEPROM_SPI_WriteBuffer(uint8_t* pBuffer, uint16_t WriteAddr, uint16_t NumByteToWrite) {
     uint16_t NumOfPage = 0, NumOfSingle = 0, Addr = 0, count = 0, temp = 0;
-    uint16_t   sEE_DataNum = 0;
+    uint16_t sEE_DataNum = 0;
+
+    EepromOperations pageWriteStatus = EEPROM_STATUS_PENDING;
 
     Addr = WriteAddr % EEPROM_PAGESIZE;
     count = EEPROM_PAGESIZE - Addr;
@@ -106,32 +108,55 @@ void EEPROM_SPI_WriteBuffer(uint8_t* pBuffer, uint16_t WriteAddr, uint16_t NumBy
     if (Addr == 0) { /* WriteAddr is EEPROM_PAGESIZE aligned  */
         if (NumOfPage == 0) { /* NumByteToWrite < EEPROM_PAGESIZE */
             sEE_DataNum = NumByteToWrite;
-            EEPROM_SPI_WritePage(pBuffer, WriteAddr, sEE_DataNum);
+            pageWriteStatus = EEPROM_SPI_WritePage(pBuffer, WriteAddr, sEE_DataNum);
+
+            if (pageWriteStatus != EEPROM_STATUS_COMPLETE) {
+                return pageWriteStatus;
+            }
+
         } else { /* NumByteToWrite > EEPROM_PAGESIZE */
             while (NumOfPage--) {
                 sEE_DataNum = EEPROM_PAGESIZE;
-                EEPROM_SPI_WritePage(pBuffer, WriteAddr, sEE_DataNum);
+                pageWriteStatus = EEPROM_SPI_WritePage(pBuffer, WriteAddr, sEE_DataNum);
+
+                if (pageWriteStatus != EEPROM_STATUS_COMPLETE) {
+                    return pageWriteStatus;
+                }
+
                 WriteAddr +=  EEPROM_PAGESIZE;
                 pBuffer += EEPROM_PAGESIZE;
             }
 
             sEE_DataNum = NumOfSingle;
-            EEPROM_SPI_WritePage(pBuffer, WriteAddr, sEE_DataNum);
+            pageWriteStatus = EEPROM_SPI_WritePage(pBuffer, WriteAddr, sEE_DataNum);
+
+            if (pageWriteStatus != EEPROM_STATUS_COMPLETE) {
+                return pageWriteStatus;
+            }
         }
     } else { /* WriteAddr is not EEPROM_PAGESIZE aligned  */
         if (NumOfPage == 0) { /* NumByteToWrite < EEPROM_PAGESIZE */
             if (NumOfSingle > count) { /* (NumByteToWrite + WriteAddr) > EEPROM_PAGESIZE */
                 temp = NumOfSingle - count;
                 sEE_DataNum = count;
-                EEPROM_SPI_WritePage(pBuffer, WriteAddr, sEE_DataNum);
+                pageWriteStatus = EEPROM_SPI_WritePage(pBuffer, WriteAddr, sEE_DataNum);
+
+                if (pageWriteStatus != EEPROM_STATUS_COMPLETE) {
+                    return pageWriteStatus;
+                }
+
                 WriteAddr +=  count;
                 pBuffer += count;
 
                 sEE_DataNum = temp;
-                EEPROM_SPI_WritePage(pBuffer, WriteAddr, sEE_DataNum);
+                pageWriteStatus = EEPROM_SPI_WritePage(pBuffer, WriteAddr, sEE_DataNum);
             } else {
                 sEE_DataNum = NumByteToWrite;
-                EEPROM_SPI_WritePage(pBuffer, WriteAddr, sEE_DataNum);
+                pageWriteStatus = EEPROM_SPI_WritePage(pBuffer, WriteAddr, sEE_DataNum);
+            }
+
+            if (pageWriteStatus != EEPROM_STATUS_COMPLETE) {
+                return pageWriteStatus;
             }
         } else { /* NumByteToWrite > EEPROM_PAGESIZE */
             NumByteToWrite -= count;
@@ -140,14 +165,24 @@ void EEPROM_SPI_WriteBuffer(uint8_t* pBuffer, uint16_t WriteAddr, uint16_t NumBy
 
             sEE_DataNum = count;
 
-            EEPROM_SPI_WritePage(pBuffer, WriteAddr, sEE_DataNum);
+            pageWriteStatus = EEPROM_SPI_WritePage(pBuffer, WriteAddr, sEE_DataNum);
+
+            if (pageWriteStatus != EEPROM_STATUS_COMPLETE) {
+                return pageWriteStatus;
+            }
+
             WriteAddr +=  count;
             pBuffer += count;
 
             while (NumOfPage--) {
                 sEE_DataNum = EEPROM_PAGESIZE;
 
-                EEPROM_SPI_WritePage(pBuffer, WriteAddr, sEE_DataNum);
+                pageWriteStatus = EEPROM_SPI_WritePage(pBuffer, WriteAddr, sEE_DataNum);
+
+                if (pageWriteStatus != EEPROM_STATUS_COMPLETE) {
+                    return pageWriteStatus;
+                }
+
                 WriteAddr +=  EEPROM_PAGESIZE;
                 pBuffer += EEPROM_PAGESIZE;
             }
@@ -155,10 +190,16 @@ void EEPROM_SPI_WriteBuffer(uint8_t* pBuffer, uint16_t WriteAddr, uint16_t NumBy
             if (NumOfSingle != 0) {
                 sEE_DataNum = NumOfSingle;
 
-                EEPROM_SPI_WritePage(pBuffer, WriteAddr, sEE_DataNum);
+                pageWriteStatus = EEPROM_SPI_WritePage(pBuffer, WriteAddr, sEE_DataNum);
+
+                if (pageWriteStatus != EEPROM_STATUS_COMPLETE) {
+                    return pageWriteStatus;
+                }
             }
         }
     }
+
+    return EEPROM_STATUS_COMPLETE;
 }
 
 /**
@@ -169,6 +210,10 @@ void EEPROM_SPI_WriteBuffer(uint8_t* pBuffer, uint16_t WriteAddr, uint16_t NumBy
   * @retval None
   */
 EepromOperations EEPROM_SPI_ReadBuffer(uint8_t* pBuffer, uint16_t ReadAddr, uint16_t NumByteToRead) {
+    while (EEPROM_SPI.State != HAL_SPI_STATE_READY) {
+        osDelay(1);
+    }
+
     /*
         We gonna send all commands in one packet of 3 bytes
      */

@@ -1,7 +1,7 @@
 [PreviousGenFiles]
-HeaderPath=I:/SandBox/F103-EEPROM/Inc
+HeaderPath=I:/STM32-EEPROM-SPI/Inc
 HeaderFiles=FreeRTOSConfig.h;stm32f1xx_it.h;stm32f1xx_hal_conf.h;main.h;
-SourcePath=I:/SandBox/F103-EEPROM/Src
+SourcePath=I:/STM32-EEPROM-SPI/Src
 SourceFiles=FreeRTOSConfig.h;stm32f1xx_it.h;stm32f1xx_hal_conf.h;main.h;freertos.c;stm32f1xx_it.c;stm32f1xx_hal_msp.c;stm32f1xx_hal_timebase_TIM.c;main.c;
 
 [PreviousLibFiles]

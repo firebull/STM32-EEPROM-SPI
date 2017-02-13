@@ -55,8 +55,6 @@ IWDG_HandleTypeDef hiwdg;
 RTC_HandleTypeDef hrtc;
 
 SPI_HandleTypeDef hspi1;
-DMA_HandleTypeDef hdma_spi1_rx;
-DMA_HandleTypeDef hdma_spi1_tx;
 
 osThreadId defaultTaskHandle;
 
@@ -72,7 +70,6 @@ uint8_t TxBuffer[32] = "TEST THIS COOL EEPROM STM SPI ++";
 void SystemClock_Config(void);
 void Error_Handler(void);
 static void MX_GPIO_Init(void);
-static void MX_DMA_Init(void);
 static void MX_IWDG_Init(void);
 static void MX_RTC_Init(void);
 static void MX_SPI1_Init(void);
@@ -103,7 +100,6 @@ int main(void) {
 
     /* Initialize all configured peripherals */
     MX_GPIO_Init();
-    MX_DMA_Init();
     MX_IWDG_Init();
     MX_RTC_Init();
     MX_SPI1_Init();
@@ -265,6 +261,7 @@ static void MX_RTC_Init(void) {
 
 /* SPI1 init function */
 static void MX_SPI1_Init(void) {
+
     hspi1.Instance = SPI1;
     hspi1.Init.Mode = SPI_MODE_MASTER;
     hspi1.Init.Direction = SPI_DIRECTION_2LINES;
@@ -276,27 +273,11 @@ static void MX_SPI1_Init(void) {
     hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
     hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
     hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
-    hspi1.Init.CRCPolynomial = 7;
+    hspi1.Init.CRCPolynomial = 10;
 
     if (HAL_SPI_Init(&hspi1) != HAL_OK) {
         Error_Handler();
     }
-}
-
-/**
-  * Enable DMA controller clock
-  */
-static void MX_DMA_Init(void) {
-    /* DMA controller clock enable */
-    __HAL_RCC_DMA1_CLK_ENABLE();
-
-    /* DMA interrupt init */
-    /* DMA1_Channel2_IRQn interrupt configuration */
-    HAL_NVIC_SetPriority(DMA1_Channel2_IRQn, 5, 0);
-    HAL_NVIC_EnableIRQ(DMA1_Channel2_IRQn);
-    /* DMA1_Channel3_IRQn interrupt configuration */
-    HAL_NVIC_SetPriority(DMA1_Channel3_IRQn, 5, 0);
-    HAL_NVIC_EnableIRQ(DMA1_Channel3_IRQn);
 
 }
 
@@ -314,9 +295,8 @@ static void MX_GPIO_Init(void) {
     /* GPIO Ports Clock Enable */
     __HAL_RCC_GPIOC_CLK_ENABLE();
     __HAL_RCC_GPIOD_CLK_ENABLE();
-    __HAL_RCC_GPIOA_CLK_ENABLE();
     __HAL_RCC_GPIOB_CLK_ENABLE();
-
+    __HAL_RCC_GPIOA_CLK_ENABLE();
 
     /*Configure GPIO pin Output Level */
     HAL_GPIO_WritePin(GPIOB, EEPROM_CS_Pin | EEPROM_WP_Pin | EEPROM_HOLD_Pin, GPIO_PIN_SET);
