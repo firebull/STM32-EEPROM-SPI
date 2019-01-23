@@ -1,10 +1,16 @@
+/* USER CODE BEGIN Header */
 /**
   ******************************************************************************
-  * File Name          : main.c
-  * Description        : Main program body
+  * @file           : main.c
+  * @brief          : Main program body
   ******************************************************************************
+  * This notice applies to any and all portions of this file
+  * that are not between comment pairs USER CODE BEGIN and
+  * USER CODE END. Other portions of this file, whether
+  * inserted by the user or by software development tools
+  * are owned by their respective copyright owners.
   *
-  * Copyright (c) 2017 STMicroelectronics International N.V.
+  * Copyright (c) 2019 STMicroelectronics International N.V.
   * All rights reserved.
   *
   * Redistribution and use in source and binary forms, with or without
@@ -40,14 +46,31 @@
   *
   ******************************************************************************
   */
+/* USER CODE END Header */
+
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "stm32f1xx_hal.h"
 #include "cmsis_os.h"
 
+/* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "STM32_EEPROM_SPI.h"
 /* USER CODE END Includes */
+
+/* Private typedef -----------------------------------------------------------*/
+/* USER CODE BEGIN PTD */
+
+/* USER CODE END PTD */
+
+/* Private define ------------------------------------------------------------*/
+/* USER CODE BEGIN PD */
+
+/* USER CODE END PD */
+
+/* Private macro -------------------------------------------------------------*/
+/* USER CODE BEGIN PM */
+
+/* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
 IWDG_HandleTypeDef hiwdg;
@@ -57,7 +80,6 @@ RTC_HandleTypeDef hrtc;
 SPI_HandleTypeDef hspi1;
 
 osThreadId defaultTaskHandle;
-
 /* USER CODE BEGIN PV */
 extern uint8_t RxBuffer[32];
 extern uint8_t EEPROM_StatusByte;
@@ -68,7 +90,6 @@ uint8_t TxBuffer[32] = "TEST THIS COOL EEPROM STM SPI ++";
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
-void Error_Handler(void);
 static void MX_GPIO_Init(void);
 static void MX_IWDG_Init(void);
 static void MX_RTC_Init(void);
@@ -80,30 +101,41 @@ void StartDefaultTask(void const * argument);
 
 /* USER CODE END PFP */
 
+/* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
 /* USER CODE END 0 */
 
+/**
+  * @brief  The application entry point.
+  * @retval int
+  */
 int main(void) {
-
     /* USER CODE BEGIN 1 */
 
     /* USER CODE END 1 */
 
-    /* MCU Configuration----------------------------------------------------------*/
+    /* MCU Configuration--------------------------------------------------------*/
 
     /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
     HAL_Init();
 
+    /* USER CODE BEGIN Init */
+
+    /* USER CODE END Init */
+
     /* Configure the system clock */
     SystemClock_Config();
+
+    /* USER CODE BEGIN SysInit */
+
+    /* USER CODE END SysInit */
 
     /* Initialize all configured peripherals */
     MX_GPIO_Init();
     MX_IWDG_Init();
     MX_RTC_Init();
     MX_SPI1_Init();
-
     /* USER CODE BEGIN 2 */
 
     /* USER CODE END 2 */
@@ -149,16 +181,16 @@ int main(void) {
     }
 
     /* USER CODE END 3 */
-
 }
 
-/** System Clock Configuration
-*/
+/**
+  * @brief System Clock Configuration
+  * @retval None
+  */
 void SystemClock_Config(void) {
-
-    RCC_OscInitTypeDef RCC_OscInitStruct;
-    RCC_ClkInitTypeDef RCC_ClkInitStruct;
-    RCC_PeriphCLKInitTypeDef PeriphClkInit;
+    RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+    RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+    RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
 
     /**Initializes the CPU, AHB and APB busses clocks
     */
@@ -196,22 +228,22 @@ void SystemClock_Config(void) {
     if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK) {
         Error_Handler();
     }
-
-    /**Configure the Systick interrupt time
-    */
-    HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq() / 1000);
-
-    /**Configure the Systick
-    */
-    HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);
-
-    /* SysTick_IRQn interrupt configuration */
-    HAL_NVIC_SetPriority(SysTick_IRQn, 15, 0);
 }
 
-/* IWDG init function */
+/**
+  * @brief IWDG Initialization Function
+  * @param None
+  * @retval None
+  */
 static void MX_IWDG_Init(void) {
 
+    /* USER CODE BEGIN IWDG_Init 0 */
+
+    /* USER CODE END IWDG_Init 0 */
+
+    /* USER CODE BEGIN IWDG_Init 1 */
+
+    /* USER CODE END IWDG_Init 1 */
     hiwdg.Instance = IWDG;
     hiwdg.Init.Prescaler = IWDG_PRESCALER_4;
     hiwdg.Init.Reload = 4095;
@@ -220,14 +252,29 @@ static void MX_IWDG_Init(void) {
         Error_Handler();
     }
 
+    /* USER CODE BEGIN IWDG_Init 2 */
+
+    /* USER CODE END IWDG_Init 2 */
+
 }
 
-/* RTC init function */
+/**
+  * @brief RTC Initialization Function
+  * @param None
+  * @retval None
+  */
 static void MX_RTC_Init(void) {
 
-    RTC_TimeTypeDef sTime;
-    RTC_DateTypeDef DateToUpdate;
+    /* USER CODE BEGIN RTC_Init 0 */
 
+    /* USER CODE END RTC_Init 0 */
+
+    RTC_TimeTypeDef sTime = {0};
+    RTC_DateTypeDef DateToUpdate = {0};
+
+    /* USER CODE BEGIN RTC_Init 1 */
+
+    /* USER CODE END RTC_Init 1 */
     /**Initialize RTC Only
     */
     hrtc.Instance = RTC;
@@ -238,9 +285,13 @@ static void MX_RTC_Init(void) {
         Error_Handler();
     }
 
+    /* USER CODE BEGIN Check_RTC_BKUP */
+
+    /* USER CODE END Check_RTC_BKUP */
+
     /**Initialize RTC and set the Time and Date
     */
-    sTime.Hours = 0x1;
+    sTime.Hours = 0x0;
     sTime.Minutes = 0x0;
     sTime.Seconds = 0x0;
 
@@ -257,11 +308,27 @@ static void MX_RTC_Init(void) {
         Error_Handler();
     }
 
+    /* USER CODE BEGIN RTC_Init 2 */
+
+    /* USER CODE END RTC_Init 2 */
+
 }
 
-/* SPI1 init function */
+/**
+  * @brief SPI1 Initialization Function
+  * @param None
+  * @retval None
+  */
 static void MX_SPI1_Init(void) {
 
+    /* USER CODE BEGIN SPI1_Init 0 */
+
+    /* USER CODE END SPI1_Init 0 */
+
+    /* USER CODE BEGIN SPI1_Init 1 */
+
+    /* USER CODE END SPI1_Init 1 */
+    /* SPI1 parameter configuration*/
     hspi1.Instance = SPI1;
     hspi1.Init.Mode = SPI_MODE_MASTER;
     hspi1.Init.Direction = SPI_DIRECTION_2LINES;
@@ -279,18 +346,19 @@ static void MX_SPI1_Init(void) {
         Error_Handler();
     }
 
+    /* USER CODE BEGIN SPI1_Init 2 */
+
+    /* USER CODE END SPI1_Init 2 */
+
 }
 
-/** Configure pins as
-        * Analog
-        * Input
-        * Output
-        * EVENT_OUT
-        * EXTI
-*/
+/**
+  * @brief GPIO Initialization Function
+  * @param None
+  * @retval None
+  */
 static void MX_GPIO_Init(void) {
-
-    GPIO_InitTypeDef GPIO_InitStruct;
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
 
     /* GPIO Ports Clock Enable */
     __HAL_RCC_GPIOC_CLK_ENABLE();
@@ -304,12 +372,14 @@ static void MX_GPIO_Init(void) {
     /*Configure GPIO pin : EEPROM_CS_Pin */
     GPIO_InitStruct.Pin = EEPROM_CS_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
     HAL_GPIO_Init(EEPROM_CS_GPIO_Port, &GPIO_InitStruct);
 
     /*Configure GPIO pins : EEPROM_WP_Pin EEPROM_HOLD_Pin */
     GPIO_InitStruct.Pin = EEPROM_WP_Pin | EEPROM_HOLD_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
@@ -319,11 +389,18 @@ static void MX_GPIO_Init(void) {
 
 /* USER CODE END 4 */
 
-/* StartDefaultTask function */
+/* USER CODE BEGIN Header_StartDefaultTask */
+/**
+  * @brief  Function implementing the defaultTask thread.
+  * @param  argument: Not used
+  * @retval None
+  */
+/* USER CODE END Header_StartDefaultTask */
 void StartDefaultTask(void const * argument) {
 
     /* USER CODE BEGIN 5 */
     /* Infinite loop */
+    EEPROM_SPI_INIT(&hspi1);
 
     EEPROM_SPI_WriteBuffer(TxBuffer, (uint16_t)0x01, (uint16_t)32);
 
@@ -359,43 +436,29 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
 /**
   * @brief  This function is executed in case of error occurrence.
-  * @param  None
   * @retval None
   */
 void Error_Handler(void) {
-    /* USER CODE BEGIN Error_Handler */
+    /* USER CODE BEGIN Error_Handler_Debug */
     /* User can add his own implementation to report the HAL error return state */
-    while (1) {
-    }
 
-    /* USER CODE END Error_Handler */
+    /* USER CODE END Error_Handler_Debug */
 }
 
-#ifdef USE_FULL_ASSERT
-
+#ifdef  USE_FULL_ASSERT
 /**
-   * @brief Reports the name of the source file and the source line number
-   * where the assert_param error has occurred.
-   * @param file: pointer to the source file name
-   * @param line: assert_param error line source number
-   * @retval None
-   */
-void assert_failed(uint8_t* file, uint32_t line) {
+  * @brief  Reports the name of the source file and the source line number
+  *         where the assert_param error has occurred.
+  * @param  file: pointer to the source file name
+  * @param  line: assert_param error line source number
+  * @retval None
+  */
+void assert_failed(uint8_t *file, uint32_t line) {
     /* USER CODE BEGIN 6 */
     /* User can add his own implementation to report the file name and line number,
       ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
     /* USER CODE END 6 */
-
 }
-
-#endif
-
-/**
-  * @}
-  */
-
-/**
-  * @}
-*/
+#endif /* USE_FULL_ASSERT */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

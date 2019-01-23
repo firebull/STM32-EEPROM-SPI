@@ -1,5 +1,5 @@
 /**
- * Copyright Nikita Bulaev 2017
+ * Copyright Nikita Bulaev 2017-2019
  *
  * Some parts of this lib is taken from STM32 StdPerif libriary
  * stm32l152d_eval_spi_ee.c and adopted for the HAL.
@@ -20,13 +20,23 @@
 
 #include "STM32_EEPROM_SPI.h"
 
-extern SPI_HandleTypeDef EEPROM_SPI;
+SPI_HandleTypeDef * EEPROM_SPI;
 uint8_t EEPROM_StatusByte;
-uint8_t RxBuffer[8] = {0x00};
+uint8_t RxBuffer[EEPROM_BUFFER_SIZE] = {0x00};
+
+/**
+ * @brief Init EEPROM SPI
+ *
+ * @param hspi Pointer to SPI struct handler
+ */
+void EEPROM_SPI_INIT(SPI_HandleTypeDef * hspi) {
+    EEPROM_SPI = hspi;
+}
 
 /**
   * @brief  Writes more than one byte to the EEPROM with a single WRITE cycle
   *         (Page WRITE sequence).
+  *
   * @note   The number of byte can't exceed the EEPROM page size.
   * @param  pBuffer: pointer to the buffer  containing the data to be written
   *         to the EEPROM.
@@ -36,7 +46,7 @@ uint8_t RxBuffer[8] = {0x00};
   * @retval EepromOperations value: EEPROM_STATUS_COMPLETE or EEPROM_STATUS_ERROR
   */
 EepromOperations EEPROM_SPI_WritePage(uint8_t* pBuffer, uint16_t WriteAddr, uint16_t NumByteToWrite) {
-    while (EEPROM_SPI.State != HAL_SPI_STATE_READY) {
+    while (EEPROM_SPI->State != HAL_SPI_STATE_READY) {
         osDelay(1);
     }
 
@@ -60,7 +70,7 @@ EepromOperations EEPROM_SPI_WritePage(uint8_t* pBuffer, uint16_t WriteAddr, uint
 
     // Make 5 attemtps to write the data
     for (uint8_t i = 0; i < 5; i++) {
-        spiTransmitStatus = HAL_SPI_Transmit(&EEPROM_SPI, pBuffer, NumByteToWrite, 100);
+        spiTransmitStatus = HAL_SPI_Transmit(EEPROM_SPI, pBuffer, NumByteToWrite, 100);
 
         if (spiTransmitStatus == HAL_BUSY) {
             osDelay(5);
@@ -88,6 +98,7 @@ EepromOperations EEPROM_SPI_WritePage(uint8_t* pBuffer, uint16_t WriteAddr, uint
 /**
   * @brief  Writes block of data to the EEPROM. In this function, the number of
   *         WRITE cycles are reduced, using Page WRITE sequence.
+  *
   * @param  pBuffer: pointer to the buffer  containing the data to be written
   *         to the EEPROM.
   * @param  WriteAddr: EEPROM's internal address to write to.
@@ -204,13 +215,14 @@ EepromOperations EEPROM_SPI_WriteBuffer(uint8_t* pBuffer, uint16_t WriteAddr, ui
 
 /**
   * @brief  Reads a block of data from the EEPROM.
+  *
   * @param  pBuffer: pointer to the buffer that receives the data read from the EEPROM.
   * @param  ReadAddr: EEPROM's internal address to read from.
   * @param  NumByteToRead: number of bytes to read from the EEPROM.
   * @retval None
   */
 EepromOperations EEPROM_SPI_ReadBuffer(uint8_t* pBuffer, uint16_t ReadAddr, uint16_t NumByteToRead) {
-    while (EEPROM_SPI.State != HAL_SPI_STATE_READY) {
+    while (EEPROM_SPI->State != HAL_SPI_STATE_READY) {
         osDelay(1);
     }
 
@@ -230,7 +242,7 @@ EepromOperations EEPROM_SPI_ReadBuffer(uint8_t* pBuffer, uint16_t ReadAddr, uint
     /* Send WriteAddr address byte to read from */
     EEPROM_SPI_SendInstruction(header, 3);
 
-    while (HAL_SPI_Receive(&EEPROM_SPI, (uint8_t*)pBuffer, NumByteToRead, 200) == HAL_BUSY) {
+    while (HAL_SPI_Receive(EEPROM_SPI, (uint8_t*)pBuffer, NumByteToRead, 200) == HAL_BUSY) {
         osDelay(1);
     };
 
@@ -243,6 +255,7 @@ EepromOperations EEPROM_SPI_ReadBuffer(uint8_t* pBuffer, uint16_t ReadAddr, uint
 /**
   * @brief  Sends a byte through the SPI interface and return the byte received
   *         from the SPI bus.
+  *
   * @param  byte: byte to send.
   * @retval The value of the received byte.
   */
@@ -250,22 +263,22 @@ uint8_t EEPROM_SendByte(uint8_t byte) {
     uint8_t answerByte;
 
     /* Loop while DR register in not empty */
-    while (EEPROM_SPI.State == HAL_SPI_STATE_RESET) {
+    while (EEPROM_SPI->State == HAL_SPI_STATE_RESET) {
         osDelay(1);
     }
 
     /* Send byte through the SPI peripheral */
-    if (HAL_SPI_Transmit(&EEPROM_SPI, &byte, 1, 200) != HAL_OK) {
+    if (HAL_SPI_Transmit(EEPROM_SPI, &byte, 1, 200) != HAL_OK) {
         Error_Handler();
     }
 
     /* Wait to receive a byte */
-    while (EEPROM_SPI.State == HAL_SPI_STATE_RESET) {
+    while (EEPROM_SPI->State == HAL_SPI_STATE_RESET) {
         osDelay(1);
     }
 
     /* Return the byte read from the SPI bus */
-    if (HAL_SPI_Receive(&EEPROM_SPI, (uint8_t*)answerByte, 1, 200) != HAL_OK) {
+    if (HAL_SPI_Receive(EEPROM_SPI, &answerByte, 1, 200) != HAL_OK) {
         Error_Handler();
     }
 
@@ -273,6 +286,7 @@ uint8_t EEPROM_SendByte(uint8_t byte) {
 }
 /**
   * @brief  Enables the write access to the EEPROM.
+  *
   * @param  None
   * @retval None
   */
@@ -290,6 +304,7 @@ void sEE_WriteEnable(void) {
 
 /**
   * @brief  Disables the write access to the EEPROM.
+  *
   * @param  None
   * @retval None
   */
@@ -308,6 +323,7 @@ void sEE_WriteDisable(void) {
 
 /**
   * @brief  Write new value in EEPROM Status Register.
+  *
   * @param  regval : new value of register
   * @retval None
   */
@@ -337,6 +353,7 @@ void sEE_WriteStatusRegister(uint8_t regval) {
 /**
   * @brief  Polls the status of the Write In Progress (WIP) flag in the EEPROM's
   *         status register and loop until write operation has completed.
+  *
   * @param  None
   * @retval None
   */
@@ -353,7 +370,7 @@ uint8_t EEPROM_SPI_WaitStandbyState(void) {
     // Loop as long as the memory is busy with a write cycle
     do {
 
-        while (HAL_SPI_Receive(&EEPROM_SPI, (uint8_t*)sEEstatus, 1, 200) == HAL_BUSY) {
+        while (HAL_SPI_Receive(EEPROM_SPI, (uint8_t*)sEEstatus, 1, 200) == HAL_BUSY) {
             osDelay(1);
         };
 
@@ -369,15 +386,16 @@ uint8_t EEPROM_SPI_WaitStandbyState(void) {
 
 /**
  * @brief Low level function to send header data to EEPROM
+ *
  * @param instruction array of bytes to send
  * @param size        data size in bytes
  */
 void EEPROM_SPI_SendInstruction(uint8_t *instruction, uint8_t size) {
-    while (EEPROM_SPI.State == HAL_SPI_STATE_RESET) {
+    while (EEPROM_SPI->State == HAL_SPI_STATE_RESET) {
         osDelay(1);
     }
 
-    if (HAL_SPI_Transmit(&EEPROM_SPI, (uint8_t*)instruction, (uint16_t)size, 200) != HAL_OK) {
+    if (HAL_SPI_Transmit(EEPROM_SPI, (uint8_t*)instruction, (uint16_t)size, 200) != HAL_OK) {
         Error_Handler();
     }
 }
